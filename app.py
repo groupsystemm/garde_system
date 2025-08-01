@@ -30,7 +30,7 @@ def create_default_admin():
             cursor.close()
         if conn:
             conn.close()
-from flask import redirect
+
 
 @app.route('/')
 def index():
@@ -1251,6 +1251,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
