@@ -36,8 +36,8 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @app.route('/')
-def home():
-    return redirect('/login')
+def index():
+    return 'Index works'
                     
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1227,10 +1227,11 @@ def logout():
 
 @app.route('/ping')
 def ping():
-    return "App is running"
+    return 'App is running'
 
 # This part only runs locally, not on Render
 if __name__ == '__main__':
     from your_module import create_default_admin
     create_default_admin()
     app.run(debug=True)
+
