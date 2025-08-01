@@ -1,73 +1,80 @@
 import os
-import io
-import pandas as pd
-from flask import Flask, render_template, request, redirect, session, send_file, url_for
+from flask import Flask, render_template, request, redirect, session
 from db_config import create_connection
 from passlib.context import CryptContext
-from werkzeug.utils import secure_filename
 
 # --- Flask Setup ---
 app = Flask(__name__, template_folder='templates')
 app.secret_key = "my-dev-secret-key"
-
-# --- Upload Config ---
-UPLOAD_FOLDER = os.path.join('static', 'uploads')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 # --- Password Hashing ---
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
 # --- Default Admin Setup ---
 def create_default_admin():
-    conn = create_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE email = %s", ('admin@site.com',))
-    if not cursor.fetchone():
-        hashed_pw = pwd_context.hash('admin123')
-        cursor.execute("INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                       ('Admin', 'admin@site.com', hashed_pw, 'admin'))
-        conn.commit()
-    cursor.close()
-    conn.close()
-
-# --- Helpers ---
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    conn = None
+    cursor = None
+    try:
+        conn = create_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM users WHERE email = %s", ('admin@site.com',))
+        if not cursor.fetchone():
+            hashed_pw = pwd_context.hash('admin123')
+            cursor.execute("INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
+                           ('Admin', 'admin@site.com', hashed_pw, 'admin'))
+            conn.commit()
+    except Exception as e:
+        print(f"Error creating default admin: {e}")
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/')
 def index():
     return 'Index works'
-                    
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
 
-    # ✅ Clear session when visiting login (especially for GET)
     if request.method == 'GET':
         session.clear()
 
     if request.method == 'POST':
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
-        conn = create_connection()
-        cursor = conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
-        user = cursor.fetchone()
-        if user and pwd_context.verify(password, user['password']):
-            session.update({
-                'user_id': user['id'],
-                'role': user['role'],
-                'name': user['name'],
-                'email': user['email']
-            })
-            return redirect('/dashboard')
-        else:
-            error = 'Invalid email or password'
-        cursor.close()
-        conn.close()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        conn = None
+        cursor = None
+        try:
+            conn = create_connection()
+            cursor = conn.cursor(dictionary=True)
+            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+            user = cursor.fetchone()
+
+            if user and pwd_context.verify(password, user['password']):
+                session.update({
+                    'user_id': user['id'],
+                    'role': user['role'],
+                    'name': user['name'],
+                    'email': user['email']
+                })
+                return redirect('/dashboard')
+            else:
+                error = 'Invalid email or password'
+        except Exception as e:
+            error = f"An error occurred: {str(e)}"
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
 
     return render_template('login.html', error=error)
+
+
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -1241,5 +1248,6 @@ if __name__ == '__main__':
     from your_module import create_default_admin
     create_default_admin()
     app.run(debug=True)
+
 
 
