@@ -18,7 +18,6 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 # --- Password Hashing ---
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-
 # --- Default Admin Setup ---
 def create_default_admin():
     conn = create_connection()
@@ -32,14 +31,14 @@ def create_default_admin():
     cursor.close()
     conn.close()
 
-
 # --- Helpers ---
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @app.route('/')
 def home():
     return redirect('/login')
-
+                    
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -1228,9 +1227,11 @@ def logout():
 
 @app.route('/ping')
 def ping():
-    return "✅ App is running!"
+    return "App is running"
 
-create_default_admin()  # run once at startup
+# Call this at app start
+create_default_admin()
 
+# Local run
 if __name__ == '__main__':
     app.run(debug=True)
