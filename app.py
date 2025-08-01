@@ -71,36 +71,38 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    conn = create_connection()
-    cursor = conn.cursor(dictionary=True)
-
-    # Fetch departments for dropdown
-    cursor.execute("SELECT name FROM departments")
-    departments = cursor.fetchall()
-
-    # Add academic years: 2014 up to 2022
-    years = [str(y) for y in range(2014, 2023)]
-
     error = None
     message = None
     selected_role = ''
+    departments = []
+    years = [str(y) for y in range(2014, 2023)]
 
-    if request.method == 'POST':
-        name = request.form['name']
-        email = request.form['email'].strip().lower()
-        password = request.form['password']
-        role = request.form['role']
-        selected_role = role
-        department = request.form.get('department') if role in ['student', 'teacher'] else None
-        year = request.form.get('year') if role == 'student' else None
+    try:
+        conn = create_connection()
+        cursor = conn.cursor(dictionary=True)
 
-        # Validation
-        if role in ['student', 'teacher'] and (not department or department.strip() == ''):
-            error = "Please select a department."
-        elif role == 'student' and (not year or year.strip() == ''):
-            error = "Please select a year."
-        else:
-            try:
+        # Fetch departments for dropdown
+        cursor.execute("SELECT name FROM departments")
+        departments = cursor.fetchall()
+
+        if request.method == 'POST':
+            name = request.form.get('name')
+            email = request.form.get('email', '').strip().lower()
+            password = request.form.get('password')
+            role = request.form.get('role')
+            selected_role = role
+            department = request.form.get('department') if role in ['student', 'teacher'] else None
+            year = request.form.get('year') if role == 'student' else None
+
+            # Basic validation
+            if not name or not email or not password or not role:
+                error = "Please fill all required fields."
+            elif role in ['student', 'teacher'] and (not department or department.strip() == ''):
+                error = "Please select a department."
+            elif role == 'student' and (not year or year.strip() == ''):
+                error = "Please select a year."
+            else:
+                # Check if user exists
                 cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
                 if cursor.fetchone():
                     error = "Email already exists."
@@ -124,19 +126,24 @@ def register():
 
                     conn.commit()
                     message = "✅ Registered successfully!"
-            except Exception as e:
-                conn.rollback()
-                error = f"An error occurred: {str(e)}"
 
-    cursor.close()
-    conn.close()
+    except Exception as e:
+        if conn:
+            conn.rollback()
+        error = f"An error occurred: {str(e)}"
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
     return render_template(
         'register.html',
         error=error,
         message=message,
         departments=departments,
         selected_role=selected_role,
-        years=years  # pass year list to template
+        years=years
     )
 
 @app.route('/dashboard')
@@ -1234,4 +1241,5 @@ if __name__ == '__main__':
     from your_module import create_default_admin
     create_default_admin()
     app.run(debug=True)
+
 
