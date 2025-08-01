@@ -33,7 +33,8 @@ def create_default_admin():
 
 @app.route('/')
 def index():
-    return 'Index works'
+    return redirect('/login')
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1239,15 +1240,16 @@ def logout():
     session.clear()
     return redirect('/login')
 
+
 @app.route('/ping')
 def ping():
     return 'App is running'
 
 # This part only runs locally, not on Render
 if __name__ == '__main__':
-    from your_module import create_default_admin
-    create_default_admin()
+    create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
