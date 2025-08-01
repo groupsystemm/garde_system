@@ -36,6 +36,10 @@ def create_default_admin():
 # --- Helpers ---
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@app.route('/')
+def home():
+    return redirect('/login')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     error = None
@@ -148,7 +152,6 @@ def dashboard():
     elif role == 'admin':
         return render_template('admin_dashboard.html', name=session['name'])
     return redirect('/login')
-
 
 @app.route('/add-course', methods=['GET', 'POST'])
 def add_course():
@@ -1227,12 +1230,7 @@ def logout():
 def ping():
     return "✅ App is running!"
 
-create_default_admin()  # <-- Runs on both local and Render
+create_default_admin()  # run once at startup
 
-# Only needed for local development/testing
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
