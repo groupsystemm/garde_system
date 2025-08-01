@@ -1222,10 +1222,15 @@ def logout():
     session.clear()
     return redirect('/login')
 
-create_default_admin()  # <-- This runs on both local and Render
+@app.route('/ping')
+def ping():
+    return "✅ App is running!"
+
+create_default_admin()  # <-- Runs on both local and Render
 
 # Only needed for local development/testing
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
