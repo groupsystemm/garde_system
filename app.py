@@ -1229,9 +1229,8 @@ def logout():
 def ping():
     return "App is running"
 
-# Call this at app start
-create_default_admin()
-
-# Local run
+# This part only runs locally, not on Render
 if __name__ == '__main__':
+    from your_module import create_default_admin
+    create_default_admin()
     app.run(debug=True)
