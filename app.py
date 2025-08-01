@@ -149,6 +149,7 @@ def dashboard():
         return render_template('admin_dashboard.html', name=session['name'])
     return redirect('/login')
 
+
 @app.route('/add-course', methods=['GET', 'POST'])
 def add_course():
     if session.get('role') != 'teacher':
@@ -1231,6 +1232,7 @@ create_default_admin()  # <-- Runs on both local and Render
 # Only needed for local development/testing
 if __name__ == '__main__':
     app.run(debug=True)
+
 
 
 
