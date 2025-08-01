@@ -79,6 +79,7 @@ def login():
 
 
 
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     error = None
@@ -87,6 +88,8 @@ def register():
     departments = []
     years = [str(y) for y in range(2014, 2023)]
 
+    conn = None
+    cursor = None
     try:
         conn = create_connection()
         cursor = conn.cursor(dictionary=True)
@@ -96,6 +99,7 @@ def register():
         departments = cursor.fetchall()
 
         if request.method == 'POST':
+            print("POST data:", request.form)  # Debug print
             name = request.form.get('name')
             email = request.form.get('email', '').strip().lower()
             password = request.form.get('password')
@@ -136,11 +140,13 @@ def register():
 
                     conn.commit()
                     message = "✅ Registered successfully!"
+                    print("User registered successfully")
 
     except Exception as e:
         if conn:
             conn.rollback()
         error = f"An error occurred: {str(e)}"
+        print(f"Register error: {e}")
     finally:
         if cursor:
             cursor.close()
@@ -154,8 +160,7 @@ def register():
         departments=departments,
         selected_role=selected_role,
         years=years
-    )
-
+    
 @app.route('/dashboard')
 def dashboard():
     if 'user_id' not in session:
@@ -1251,6 +1256,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
