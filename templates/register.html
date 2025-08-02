@@ -54,7 +54,7 @@
           <label for="year" class="form-label">Year:</label>
           <select name="year" id="year" class="form-select">
             <option value="">-- Select Year --</option>
-            {% for y in range(2014, 2023) %}
+            {% for y in years %}
               <option value="{{ y }}">{{ y }}</option>
             {% endfor %}
           </select>
