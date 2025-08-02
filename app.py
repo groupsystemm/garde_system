@@ -99,7 +99,6 @@ def register():
         departments = cursor.fetchall()
 
         if request.method == 'POST':
-            print("POST data:", request.form)  # Debug print
             name = request.form.get('name')
             email = request.form.get('email', '').strip().lower()
             password = request.form.get('password')
@@ -108,7 +107,7 @@ def register():
             department = request.form.get('department') if role in ['student', 'teacher'] else None
             year = request.form.get('year') if role == 'student' else None
 
-            # Basic validation
+            # Validation
             if not name or not email or not password or not role:
                 error = "Please fill all required fields."
             elif role in ['student', 'teacher'] and (not department or department.strip() == ''):
@@ -116,17 +115,19 @@ def register():
             elif role == 'student' and (not year or year.strip() == ''):
                 error = "Please select a year."
             else:
-                # Check if user exists
+                # Check for existing user
                 cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
                 if cursor.fetchone():
                     error = "Email already exists."
                 else:
+                    # Insert user
                     hashed_pw = pwd_context.hash(password)
                     cursor.execute(
                         "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
                         (name, email, hashed_pw, role)
                     )
 
+                    # Insert into specific role table
                     if role == 'student':
                         cursor.execute(
                             "INSERT INTO students (name, email, department, year) VALUES (%s, %s, %s, %s)",
@@ -140,13 +141,10 @@ def register():
 
                     conn.commit()
                     message = "✅ Registered successfully!"
-                    print("User registered successfully")
-
     except Exception as e:
         if conn:
             conn.rollback()
         error = f"An error occurred: {str(e)}"
-        print(f"Register error: {e}")
     finally:
         if cursor:
             cursor.close()
@@ -160,6 +158,8 @@ def register():
         departments=departments,
         selected_role=selected_role,
         years=years
+    )
+
     
 @app.route('/dashboard')
 def dashboard():
@@ -1256,6 +1256,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
