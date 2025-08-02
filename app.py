@@ -88,13 +88,11 @@ def register():
     departments = []
     years = [str(y) for y in range(2014, 2023)]
 
-    conn = None
-    cursor = None
     try:
         conn = create_connection()
         cursor = conn.cursor(dictionary=True)
 
-        # Fetch departments for dropdown
+        # Load departments for dropdown
         cursor.execute("SELECT name FROM departments")
         departments = cursor.fetchall()
 
@@ -107,27 +105,24 @@ def register():
             department = request.form.get('department') if role in ['student', 'teacher'] else None
             year = request.form.get('year') if role == 'student' else None
 
-            # Validation
             if not name or not email or not password or not role:
                 error = "Please fill all required fields."
-            elif role in ['student', 'teacher'] and (not department or department.strip() == ''):
+            elif role in ['student', 'teacher'] and not department:
                 error = "Please select a department."
-            elif role == 'student' and (not year or year.strip() == ''):
+            elif role == 'student' and not year:
                 error = "Please select a year."
             else:
-                # Check for existing user
                 cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
                 if cursor.fetchone():
                     error = "Email already exists."
                 else:
-                    # Insert user
                     hashed_pw = pwd_context.hash(password)
+
                     cursor.execute(
                         "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
                         (name, email, hashed_pw, role)
                     )
 
-                    # Insert into specific role table
                     if role == 'student':
                         cursor.execute(
                             "INSERT INTO students (name, email, department, year) VALUES (%s, %s, %s, %s)",
@@ -145,11 +140,10 @@ def register():
         if conn:
             conn.rollback()
         error = f"An error occurred: {str(e)}"
+        print(f"[Register Error]: {e}")
     finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        if 'cursor' in locals(): cursor.close()
+        if 'conn' in locals(): conn.close()
 
     return render_template(
         'register.html',
@@ -1256,6 +1250,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
