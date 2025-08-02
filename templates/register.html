@@ -111,15 +111,11 @@
     } else {
       deptGroup.style.display = 'none';
       yearGroup.style.display = 'none';
-      document.getElementById("department").value = '';
-      document.getElementById("year").value = '';
     }
   }
 
   document.addEventListener('DOMContentLoaded', function () {
     toggleDepartment();
-    document.getElementById("role").addEventListener("change", toggleDepartment);
-
     const flash = document.getElementById('flash-message');
     if (flash) {
       setTimeout(() => flash.style.display = 'none', 4000);
