@@ -1060,6 +1060,8 @@ def submit_grade_with_course():
     conn.close()
 
     return render_template("submit_grade_with_course.html", departments=departments, students=students, message=message, error=error)
+
+
 @app.route('/teacher/view-grades', methods=['GET'])
 def teacher_view_grades():
     if session.get('role') != 'teacher':
@@ -1115,13 +1117,13 @@ def teacher_view_grades():
         return render_template('teacher_view_grades.html', grades=grades, departments=departments, selected_dept=selected_dept)
 
     except Exception as e:
-        import traceback
         print("❌ Error loading grades:\n", traceback.format_exc())
         return render_template('teacher_view_grades.html', grades=[], departments=[], selected_dept=selected_dept, error="⚠️ Error loading grades.")
 
     finally:
         cursor.close()
         conn.close()
+
 
 
 
@@ -1323,6 +1325,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
