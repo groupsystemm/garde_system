@@ -3,34 +3,51 @@ from flask import Flask, render_template, request, redirect, session
 from db_config import create_connection
 from passlib.context import CryptContext
 
-# --- Flask Setup ---
+# --- Flask App Setup ---
 app = Flask(__name__, template_folder='templates')
 app.secret_key = "my-dev-secret-key"
 
-# --- Password Hashing ---
+# --- File Upload Setup ---
+UPLOAD_FOLDER = os.path.join('static', 'uploads')
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+# --- Password Hashing Setup ---
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 
-# --- Default Admin Setup ---
+# --- Check File Extension Helper ---
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+# --- Create Default Admin User ---
 def create_default_admin():
     conn = None
     cursor = None
     try:
         conn = create_connection()
         cursor = conn.cursor(dictionary=True)
+
         cursor.execute("SELECT * FROM users WHERE email = %s", ('admin@site.com',))
-        if not cursor.fetchone():
+        existing_admin = cursor.fetchone()
+
+        if not existing_admin:
             hashed_pw = pwd_context.hash('admin123')
-            cursor.execute("INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
-                           ('Admin', 'admin@site.com', hashed_pw, 'admin'))
+            cursor.execute(
+                "INSERT INTO users (name, email, password, role) VALUES (%s, %s, %s, %s)",
+                ('Admin', 'admin@site.com', hashed_pw, 'admin')
+            )
             conn.commit()
+            print("✅ Default admin created")
+        else:
+            print("ℹ️ Default admin already exists")
     except Exception as e:
-        print(f"Error creating default admin: {e}")
+        print(f"❌ Error creating default admin: {e}")
     finally:
         if cursor:
             cursor.close()
         if conn:
             conn.close()
-
 
 @app.route('/')
 def index():
@@ -1250,6 +1267,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
