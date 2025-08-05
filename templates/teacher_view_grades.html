@@ -17,7 +17,7 @@
 
   <!-- Filter -->
   <form method="get" class="row g-3 mb-4">
-    <div class="col-md-6">
+    <div class="col-md-4">
       <label class="form-label">Department</label>
       <select name="department" class="form-select">
         <option value="All" {% if selected_dept == 'All' or not selected_dept %}selected{% endif %}>All</option>
@@ -26,8 +26,11 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-6 d-flex align-items-end">
+    <div class="col-md-4 d-flex align-items-end">
       <button type="submit" class="btn btn-primary w-100">🔍 Filter</button>
+    </div>
+    <div class="col-md-4 d-flex align-items-end">
+      <a href="/teacher/export-grades?department={{ selected_dept }}" class="btn btn-success w-100 me-2">⬇️ Export to Excel</a>
     </div>
   </form>
 
