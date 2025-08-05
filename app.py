@@ -1073,32 +1073,42 @@ def teacher_view_grades():
         # Get teacher's courses
         cursor.execute("SELECT id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
         teacher_courses = cursor.fetchall()
+
+        if not teacher_courses:
+            return render_template('teacher_view_grades.html', grades=[], message="📭 You have no courses assigned.")
+
+        # Extract course IDs
         course_ids = [course['id'] for course in teacher_courses]
 
-        if not course_ids:
-            return render_template('teacher_view_grades.html', grades=[], message="You have no courses assigned.")
+        # Use dynamic placeholders for SQL IN clause
+        placeholders = ','.join(['%s'] * len(course_ids))
 
-        format_strings = ','.join(['%s'] * len(course_ids))
-        cursor.execute(f"""
+        query = f"""
             SELECT 
                 g.student_id, g.course_id, g.grade, g.comment,
                 s.name AS student_name, c.course_name
             FROM grades g
             JOIN students s ON g.student_id = s.id
             JOIN courses c ON g.course_id = c.id
-            WHERE g.course_id IN ({format_strings})
-        """, tuple(course_ids))
+            WHERE g.course_id IN ({placeholders})
+        """
 
+        cursor.execute(query, tuple(course_ids))
         grades = cursor.fetchall()
 
+        if not grades:
+            return render_template('teacher_view_grades.html', grades=[], message="📭 No grades found for your courses.")
+
+        return render_template('teacher_view_grades.html', grades=grades)
+
     except Exception as e:
-        grades = []
-        print("Error:", str(e))
+        print("❌ Error fetching grades:", str(e))
+        return render_template('teacher_view_grades.html', grades=[], message="⚠️ Error loading grades.")
+
     finally:
         cursor.close()
         conn.close()
 
-    return render_template('teacher_view_grades.html', grades=grades)
 
 
 @app.route('/teacher/add-comment/<int:student_id>/<int:course_id>', methods=['POST'])
@@ -1299,6 +1309,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
