@@ -472,26 +472,53 @@ def view_all_grades():
 def download_grades():
     if session.get('role') != 'student':
         return redirect('/login')
-    conn = create_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id FROM students WHERE email = %s", (session['email'],))
-    student = cursor.fetchone()
-    cursor.execute("""
-        SELECT c.course_name, g.mid_exam, g.final_exam, g.assignment, g.quiz, g.grade
-        FROM grades g
-        JOIN courses c ON g.course_id = c.id
-        WHERE g.student_id = %s
-    """, (student['id'],))
-    grades = cursor.fetchall()
-    cursor.close()
-    conn.close()
-    df = pd.DataFrame(grades)
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='openpyxl') as writer:
-        df.to_excel(writer, index=False)
-    output.seek(0)
-    return send_file(output, download_name=f"{session['name']}_grades.xlsx", as_attachment=True,
-                     mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
+    conn = None
+    cursor = None
+    try:
+        conn = create_connection()
+        cursor = conn.cursor(dictionary=True)
+
+        # Get student ID using session email
+        cursor.execute("SELECT id FROM students WHERE email = %s", (session['email'],))
+        student = cursor.fetchone()
+        if not student:
+            return "Student not found.", 404
+
+        # Fetch grades
+        cursor.execute("""
+            SELECT c.course_name, g.mid_exam, g.final_exam, g.assignment, g.quiz, g.grade
+            FROM grades g
+            JOIN courses c ON g.course_id = c.id
+            WHERE g.student_id = %s
+        """, (student['id'],))
+        grades = cursor.fetchall()
+        if not grades:
+            return "No grades found for the student.", 404
+
+        # Convert to Excel
+        df = pd.DataFrame(grades)
+        output = io.BytesIO()
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Grades')
+        output.seek(0)
+
+        return send_file(
+            output,
+            download_name=f"{session['name']}_grades.xlsx",
+            as_attachment=True,
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+
+    except Exception as e:
+        print(f"❌ Download error: {e}")
+        return f"Internal Server Error: {e}", 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/admin/students')
 def admin_students():
@@ -1269,6 +1296,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
