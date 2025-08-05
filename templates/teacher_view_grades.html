@@ -1,166 +1,268 @@
-{% extends "layout.html" %}
-{% block title %}📊 View Grades - Teacher{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>{% block title %}📊 View Grades - Teacher{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-{% block content %}
-<div class="container mt-5">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 
-  <!-- Back to Dashboard -->
-  <a href="/teacher/dashboard" class="btn btn-secondary mb-4">⬅️ Back to Dashboard</a>
+  <!-- Custom styles -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
 
-  <h3 class="mb-4">📊 All Student Grades (Your Courses)</h3>
+  <!-- UI Enhancements -->
+  <style>
+    .img-thumbnail {
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .navbar-brand {
+      font-weight: bold;
+    }
+    .nav-link {
+      font-weight: 500;
+    }
+    .profile-pic-thumb {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .sidebar {
+      background-color: #002147;
+      color: white;
+      min-height: 100vh;
+    }
+    .sidebar a {
+      color: white;
+      display: block;
+      padding: 10px;
+      text-decoration: none;
+    }
+    .sidebar a:hover {
+      background-color: #014a84;
+    }
+    .card {
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body class="bg-light">
 
-  {% if message %}
-    <div class="alert alert-success">{{ message }}</div>
-  {% elif error %}
-    <div class="alert alert-danger">{{ error }}</div>
+  {% if session.get('user_id') %}
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/dashboard">📘 GradeSystem</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+              aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto align-items-center">
+          {% if session['role'] == 'admin' %}
+            <li class="nav-item">
+              <a class="nav-link" href="/admin">Admin Panel</a>
+            </li>
+          {% elif session['role'] == 'teacher' %}
+            <li class="nav-item">
+              <a class="nav-link" href="/dashboard">Teacher Dashboard</a>
+            </li>
+          {% elif session['role'] == 'student' %}
+            <li class="nav-item">
+              <a class="nav-link" href="/view-grades">My Grades</a>
+            </li>
+          {% endif %}
+          <li class="nav-item">
+            <a class="nav-link" href="/admin/profile">
+              <img src="{{ url_for('static', filename='uploads/' ~ (session.get('profile_pic') or 'default.png')) }}"
+                   class="profile-pic-thumb me-2" alt="Profile" />
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link text-danger" href="/logout">Logout</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
   {% endif %}
 
-  <!-- Filter -->
-  <form method="get" class="row g-3 mb-4">
-    <div class="col-md-3">
-      <label class="form-label">Department</label>
-      <select name="department" class="form-select">
-        <option value="All" {% if selected_dept == 'All' or not selected_dept %}selected{% endif %}>All</option>
-        {% for dept in departments %}
-        <option value="{{ dept }}" {% if dept == selected_dept %}selected{% endif %}>{{ dept }}</option>
-        {% endfor %}
-      </select>
+  <!-- Main Content -->
+  <div class="container mt-4">
+    <!-- Back to Dashboard -->
+    <a href="/teacher/dashboard" class="btn btn-secondary mb-4">⬅️ Back to Dashboard</a>
+
+    <h3 class="mb-4">📊 All Student Grades (Your Courses)</h3>
+
+    {% if message %}
+      <div class="alert 
+                  {% if message.startswith('❌') %}alert-danger
+                  {% elif message.startswith('📭') %}alert-warning
+                  {% else %}alert-success{% endif %}">
+        {{ message }}
+      </div>
+    {% endif %}
+
+    <!-- Filter -->
+    <form method="get" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <label class="form-label">Department</label>
+        <select name="department" class="form-select">
+          <option value="All" {% if selected_dept == 'All' or not selected_dept %}selected{% endif %}>All</option>
+          {% for dept in departments %}
+          <option value="{{ dept }}" {% if dept == selected_dept %}selected{% endif %}>{{ dept }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Semester</label>
+        <select name="semester" class="form-select">
+          <option value="All" {% if selected_semester == 'All' or not selected_semester %}selected{% endif %}>All</option>
+          {% for sem in semesters %}
+          <option value="{{ sem }}" {% if sem == selected_semester %}selected{% endif %}>{{ sem }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Section</label>
+        <select name="section" class="form-select">
+          <option value="All" {% if selected_section == 'All' or not selected_section %}selected{% endif %}>All</option>
+          {% for sec in sections %}
+          <option value="{{ sec }}" {% if sec == selected_section %}selected{% endif %}>{{ sec }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex align-items-end">
+        <button type="submit" class="btn btn-primary w-100">🔍 Filter</button>
+      </div>
+    </form>
+
+    <div class="mb-4">
+      <a href="/teacher/export-grades?department={{ selected_dept }}&semester={{ selected_semester }}&section={{ selected_section }}"
+         class="btn btn-success w-100">
+        ⬇️ Export to Excel
+      </a>
     </div>
-    <div class="col-md-3">
-      <label class="form-label">Semester</label>
-      <select name="semester" class="form-select">
-        <option value="All" {% if selected_semester == 'All' or not selected_semester %}selected{% endif %}>All</option>
-        {% for sem in semesters %}
-        <option value="{{ sem }}" {% if sem == selected_semester %}selected{% endif %}>{{ sem }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3">
-      <label class="form-label">Section</label>
-      <select name="section" class="form-select">
-        <option value="All" {% if selected_section == 'All' or not selected_section %}selected{% endif %}>All</option>
-        {% for sec in sections %}
-        <option value="{{ sec }}" {% if sec == selected_section %}selected{% endif %}>{{ sec }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="col-md-3 d-flex align-items-end">
-      <button type="submit" class="btn btn-primary w-100">🔍 Filter</button>
-    </div>
-  </form>
 
-  <div class="mb-4">
-    <a href="/teacher/export-grades?department={{ selected_dept }}&semester={{ selected_semester }}&section={{ selected_section }}" class="btn btn-success w-100">⬇️ Export to Excel</a>
-  </div>
+    <!-- Grades Table -->
+    {% if grades %}
+      <div class="table-responsive">
+        <table class="table table-bordered table-striped">
+          <thead class="table-dark">
+            <tr>
+              <th>Student Name</th>
+              <th>Course</th>
+              <th>Department</th>
+              <th>Grade</th>
+              <th>Comment</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for grade in grades %}
+            <tr>
+              <td>{{ grade.student_name }}</td>
+              <td>{{ grade.course_name }}</td>
+              <td>{{ grade.department_name }}</td>
+              <td>{{ grade.grade }}</td>
+              <td>
+                <a href="#"
+                   class="btn btn-sm btn-info open-comment-modal"
+                   data-student="{{ grade.student_id }}"
+                   data-course="{{ grade.course_id }}">
+                  {{ grade.comment or 'Add/View' }}
+                </a>
+              </td>
+              <td>
+                <a href="/edit-grade/{{ grade.student_id }}/{{ grade.course_id }}"
+                   class="btn btn-warning btn-sm">Edit</a>
+                <a href="/delete-grade/{{ grade.student_id }}/{{ grade.course_id }}"
+                   class="btn btn-danger btn-sm"
+                   onclick="return confirm('Are you sure you want to delete this grade?');">
+                  Delete
+                </a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="alert alert-warning text-center">No grades found for your courses.</div>
+    {% endif %}
 
-  <!-- Grades Table -->
-  {% if grades %}
-  <table class="table table-bordered table-striped">
-    <thead class="table-dark">
-      <tr>
-        <th>Student Name</th>
-        <th>Course</th>
-        <th>Department</th>
-        <th>Grade</th>
-        <th>Comment</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for grade in grades %}
-      <tr>
-        <td>{{ grade.student_name }}</td>
-        <td>{{ grade.course_name }}</td>
-        <td>{{ grade.department_name }}</td>
-        <td>{{ grade.grade }}</td>
-        <td>
-          <a href="#" 
-             class="btn btn-sm btn-info open-comment-modal" 
-             data-student="{{ grade.student_id }}" 
-             data-course="{{ grade.course_id }}">
-            {{ grade.comment or 'Add/View' }}
-          </a>
-        </td>
-        <td>
-          <a href="/edit-grade/{{ grade.student_id }}/{{ grade.course_id }}" class="btn btn-warning btn-sm">Edit</a>
-          <a href="/delete-grade/{{ grade.student_id }}/{{ grade.course_id }}" class="btn btn-danger btn-sm"
-             onclick="return confirm('Are you sure you want to delete this grade?');">Delete</a>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {% else %}
-    <div class="alert alert-warning text-center">No grades found for your courses.</div>
-  {% endif %}
-</div>
-
-<!-- Comment Modal -->
-<div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <form id="commentForm" method="POST">
-        <div class="modal-header">
-          <h5 class="modal-title" id="commentModalLabel">💬 Comments</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div id="commentsList" style="max-height: 300px; overflow-y: auto;">
-            <p>Loading comments...</p>
-          </div>
-          <div class="mt-3">
-            <label for="commentText" class="form-label">Add New Comment</label>
-            <textarea id="commentText" name="comment" class="form-control" rows="4" required></textarea>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button type="submit" class="btn btn-primary">Send Comment</button>
-          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<!-- Bootstrap JS + your script -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-
-<script>
-  const commentModal = new bootstrap.Modal(document.getElementById('commentModal'));
-  let currentStudentId = null;
-  let currentCourseId = null;
-
-  document.querySelectorAll('.open-comment-modal').forEach(button => {
-    button.addEventListener('click', e => {
-      e.preventDefault();
-      currentStudentId = button.dataset.student;
-      currentCourseId = button.dataset.course;
-
-      document.getElementById('commentForm').action = `/teacher/add-comment/${currentStudentId}/${currentCourseId}`;
-      document.getElementById('commentText').value = '';
-      const commentsList = document.getElementById('commentsList');
-      commentsList.innerHTML = '<p>Loading comments...</p>';
-
-      fetch(`/api/comments/${currentStudentId}/${currentCourseId}`)
-        .then(response => response.json())
-        .then(data => {
-          if (data.comments.length === 0) {
-            commentsList.innerHTML = '<p>No comments yet.</p>';
-          } else {
-            commentsList.innerHTML = data.comments.map(c => `
-              <div class="mb-2 p-2 border rounded">
-                <strong>${c.teacher_name}</strong> <small class="text-muted">${c.created_at}</small>
-                <p>${c.comment}</p>
+    <!-- Comment Modal -->
+    <div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <form id="commentForm" method="POST">
+            <div class="modal-header">
+              <h5 class="modal-title" id="commentModalLabel">💬 Comments</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div id="commentsList" style="max-height: 300px; overflow-y: auto;">
+                <p>Loading comments...</p>
               </div>
-            `).join('');
-          }
-        })
-        .catch(() => {
-          commentsList.innerHTML = '<p>Error loading comments.</p>';
-        });
+              <div class="mt-3">
+                <label for="commentText" class="form-label">Add New Comment</label>
+                <textarea id="commentText" name="comment" class="form-control" rows="4" required></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">Send Comment</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
 
-      commentModal.show();
+  </div> <!-- /.container -->
+
+  <!-- Bootstrap JS Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    const commentModal = new bootstrap.Modal(document.getElementById('commentModal'));
+    let currentStudentId = null;
+    let currentCourseId = null;
+
+    document.querySelectorAll('.open-comment-modal').forEach(button => {
+      button.addEventListener('click', e => {
+        e.preventDefault();
+        currentStudentId = button.dataset.student;
+        currentCourseId = button.dataset.course;
+
+        document.getElementById('commentForm').action = `/teacher/add-comment/${currentStudentId}/${currentCourseId}`;
+        document.getElementById('commentText').value = '';
+        const commentsList = document.getElementById('commentsList');
+        commentsList.innerHTML = '<p>Loading comments...</p>';
+
+        fetch(`/api/comments/${currentStudentId}/${currentCourseId}`)
+          .then(response => response.json())
+          .then(data => {
+            if (!data.comments || data.comments.length === 0) {
+              commentsList.innerHTML = '<p>No comments yet.</p>';
+            } else {
+              commentsList.innerHTML = data.comments.map(c => `
+                <div class="mb-2 p-2 border rounded">
+                  <strong>${c.teacher_name}</strong> <small class="text-muted">${c.created_at}</small>
+                  <p>${c.comment}</p>
+                </div>
+              `).join('');
+            }
+          })
+          .catch(() => {
+            commentsList.innerHTML = '<p>Error loading comments.</p>';
+          });
+
+        commentModal.show();
+      });
     });
-  });
-</script>
-{% endblock %}
+  </script>
+</body>
+</html>
