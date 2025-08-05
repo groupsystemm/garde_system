@@ -1,10 +1,12 @@
 import os
 import io
 import pandas as pd
+import traceback  # <--- add this line here
 from flask import Flask, render_template, request, redirect, session, flash, url_for, send_file
 from db_config import create_connection
 from passlib.context import CryptContext
 from werkzeug.utils import secure_filename
+
 
 # --- Flask App Setup ---
 app = Flask(__name__, template_folder='templates')
@@ -1325,6 +1327,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
