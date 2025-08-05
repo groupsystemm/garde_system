@@ -1107,7 +1107,7 @@ def teacher_view_grades():
                 grades=[],
                 departments=[],
                 selected_dept=selected_dept,
-                message="\U0001f4ed You have no courses assigned."
+                message="📭 You have no courses assigned."
             )
 
         course_ids = [course['id'] for course in teacher_courses]
@@ -1136,7 +1136,7 @@ def teacher_view_grades():
         """
         params = course_ids.copy()
 
-        if selected_dept != 'All' and selected_dept != '':
+        if selected_dept != 'All' and selected_dept.strip() != '':
             grade_query += " AND d.name = %s"
             params.append(selected_dept)
 
@@ -1148,23 +1148,24 @@ def teacher_view_grades():
             grades=grades,
             departments=departments,
             selected_dept=selected_dept,
-            message="" if grades else "\U0001f4ed No grades found."
+            message=None if grades else "📭 No grades found."
         )
 
     except Exception:
         import traceback
-        print("\u274c Error loading grades:\n", traceback.format_exc())
+        print("❌ Error loading grades:\n", traceback.format_exc())
         return render_template(
             'teacher_view_grades.html',
             grades=[],
             departments=[],
             selected_dept=selected_dept,
-            error="Something went wrong while loading grades."
+            message="❌ Something went wrong while loading grades."
         )
 
     finally:
         cursor.close()
         conn.close()
+
 @app.route('/teacher/export-grades')
 def export_grades():
     if 'teacher_id' not in session:
@@ -1476,6 +1477,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
