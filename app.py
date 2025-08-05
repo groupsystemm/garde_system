@@ -1064,7 +1064,6 @@ def submit_grade_with_course():
     return render_template("submit_grade_with_course.html", departments=departments, students=students, message=message, error=error)
 
 
-import traceback
 
 @app.route('/teacher/view-grades', methods=['GET'])
 def teacher_view_grades():
@@ -1332,6 +1331,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
