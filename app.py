@@ -1064,6 +1064,8 @@ def submit_grade_with_course():
     return render_template("submit_grade_with_course.html", departments=departments, students=students, message=message, error=error)
 
 
+import traceback
+
 @app.route('/teacher/view-grades', methods=['GET'])
 def teacher_view_grades():
     if session.get('role') != 'teacher':
@@ -1076,7 +1078,8 @@ def teacher_view_grades():
     cursor = conn.cursor(dictionary=True)
 
     try:
-        cursor.execute("SELECT id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
+        # Get courses assigned to this teacher
+        cursor.execute("SELECT id FROM courses WHERE teacher_id = %s", (teacher_id,))
         teacher_courses = cursor.fetchall()
 
         if not teacher_courses:
@@ -1085,6 +1088,7 @@ def teacher_view_grades():
         course_ids = [course['id'] for course in teacher_courses]
         placeholders = ','.join(['%s'] * len(course_ids))
 
+        # Get all departments for filtering
         cursor.execute(f"""
             SELECT DISTINCT d.name
             FROM departments d
@@ -1094,6 +1098,7 @@ def teacher_view_grades():
         """, tuple(course_ids))
         departments = [row['name'] for row in cursor.fetchall()]
 
+        # Prepare grades query with optional department filter
         grade_query = f"""
             SELECT 
                 g.student_id, g.course_id, g.grade, g.comment,
@@ -1104,7 +1109,7 @@ def teacher_view_grades():
             JOIN departments d ON s.department_id = d.id
             WHERE g.course_id IN ({placeholders})
         """
-        params = list(course_ids)
+        params = course_ids.copy()
 
         if selected_dept != 'All' and selected_dept != '':
             grade_query += " AND d.name = %s"
@@ -1327,6 +1332,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
