@@ -1149,7 +1149,55 @@ def teacher_view_grades():
     finally:
         cursor.close()
         conn.close()
+@app.route('/teacher/export-grades')
+def export_grades():
+    if 'teacher_id' not in session:
+        return redirect('/login')
 
+    teacher_id = session['teacher_id']
+    department = request.args.get('department', 'All')
+
+    conn = create_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Build SQL query
+    query = """
+        SELECT s.name AS student_name, c.name AS course_name, d.name AS department_name, g.grade, g.comment
+        FROM grades g
+        JOIN students s ON g.student_id = s.id
+        JOIN courses c ON g.course_id = c.id
+        JOIN departments d ON c.department_id = d.id
+        WHERE c.teacher_id = %s
+    """
+    params = [teacher_id]
+
+    if department != 'All':
+        query += " AND d.name = %s"
+        params.append(department)
+
+    cursor.execute(query, params)
+    rows = cursor.fetchall()
+    conn.close()
+
+    if not rows:
+        return "No data to export.", 400
+
+    # Convert to DataFrame
+    df = pd.DataFrame(rows)
+
+    # Write to Excel in memory
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, sheet_name='Grades')
+
+    output.seek(0)
+
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name="grades_export.xlsx",
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 
 
@@ -1353,6 +1401,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
