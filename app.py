@@ -1,11 +1,27 @@
 import os
 import io
+import traceback
+
 import pandas as pd
-import traceback  # <--- add this line here
-from flask import Flask, render_template, request, redirect, session, flash, url_for, send_file
-from db_config import create_connection
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    session,
+    flash,
+    url_for,
+    send_file,
+)
 from passlib.context import CryptContext
 from werkzeug.utils import secure_filename
+
+from db_config import create_connection
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+
 
 
 # --- Flask App Setup ---
@@ -1198,6 +1214,65 @@ def export_grades():
         download_name="grades_export.xlsx",
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+@app.route("/teacher/export-pdf")
+def export_teacher_grades_pdf():
+    if "teacher_id" not in session:
+        return redirect("/login")
+
+    teacher_id = session["teacher_id"]
+    department_filter = request.args.get("department", "All")
+
+    conn = create_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    query = """
+        SELECT g.student_id, s.name AS student_name, c.name AS course_name, d.name AS department_name, g.grade, g.comment
+        FROM grades g
+        JOIN students s ON g.student_id = s.id
+        JOIN courses c ON g.course_id = c.id
+        JOIN departments d ON c.department_id = d.id
+        WHERE c.teacher_id = %s
+    """
+    params = [teacher_id]
+
+    if department_filter != "All":
+        query += " AND d.name = %s"
+        params.append(department_filter)
+
+    cursor.execute(query, params)
+    grades = cursor.fetchall()
+    conn.close()
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    styles = getSampleStyleSheet()
+
+    data = [["Student Name", "Course", "Department", "Grade", "Comment"]]
+    for g in grades:
+        data.append([
+            g["student_name"],
+            g["course_name"],
+            g["department_name"],
+            str(g["grade"]),
+            g["comment"] or ""
+        ])
+
+    table = Table(data)
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.darkblue),
+        ('TEXTCOLOR',(0,0),(-1,0),colors.whitesmoke),
+        ('ALIGN',(0,0),(-1,-1),'LEFT'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 10),
+        ('BOTTOMPADDING', (0,0), (-1,0), 10),
+        ('BACKGROUND',(0,1),(-1,-1),colors.beige),
+        ('GRID', (0,0), (-1,-1), 0.25, colors.black),
+    ]))
+
+    doc.build([table])
+    buffer.seek(0)
+
+    return send_file(buffer, as_attachment=True, download_name="teacher_grades.pdf", mimetype='application/pdf')
 
 
 
@@ -1401,6 +1476,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
