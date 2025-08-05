@@ -1065,6 +1065,8 @@ def submit_grade_with_course():
 
 
 
+import traceback  # make sure this is imported at the top
+
 @app.route('/teacher/view-grades', methods=['GET'])
 def teacher_view_grades():
     if session.get('role') != 'teacher':
@@ -1082,7 +1084,13 @@ def teacher_view_grades():
         teacher_courses = cursor.fetchall()
 
         if not teacher_courses:
-            return render_template('teacher_view_grades.html', grades=[], departments=[], selected_dept=selected_dept, message="📭 You have no courses assigned.")
+            return render_template(
+                'teacher_view_grades.html',
+                grades=[],
+                departments=[],
+                selected_dept=selected_dept,
+                message="📭 You have no courses assigned."
+            )
 
         course_ids = [course['id'] for course in teacher_courses]
         placeholders = ','.join(['%s'] * len(course_ids))
@@ -1118,17 +1126,35 @@ def teacher_view_grades():
         grades = cursor.fetchall()
 
         if not grades:
-            return render_template('teacher_view_grades.html', grades=[], departments=departments, selected_dept=selected_dept, message="📭 No grades found.")
+            return render_template(
+                'teacher_view_grades.html',
+                grades=[],
+                departments=departments,
+                selected_dept=selected_dept,
+                message="📭 No grades found."
+            )
 
-        return render_template('teacher_view_grades.html', grades=grades, departments=departments, selected_dept=selected_dept)
+        return render_template(
+            'teacher_view_grades.html',
+            grades=grades,
+            departments=departments,
+            selected_dept=selected_dept
+        )
 
-    except Exception as e:
+    except Exception:
         print("❌ Error loading grades:\n", traceback.format_exc())
-        return render_template('teacher_view_grades.html', grades=[], departments=[], selected_dept=selected_dept, error="⚠️ Error loading grades.")
+        return render_template(
+            'teacher_view_grades.html',
+            grades=[],
+            departments=[],
+            selected_dept=selected_dept,
+            error=None  # no error message shown, just empty
+        )
 
     finally:
         cursor.close()
         conn.close()
+
 
 
 
@@ -1331,6 +1357,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
