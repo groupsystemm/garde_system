@@ -1066,13 +1066,12 @@ def teacher_view_grades():
         return redirect('/login')
 
     teacher_id = session.get('user_id')
+    selected_dept = request.args.get('department', 'All')
+
     conn = create_connection()
     cursor = conn.cursor(dictionary=True)
 
-    selected_dept = request.args.get('department', 'All')
-
     try:
-        # Get teacher's courses
         cursor.execute("SELECT id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
         teacher_courses = cursor.fetchall()
 
@@ -1082,17 +1081,15 @@ def teacher_view_grades():
         course_ids = [course['id'] for course in teacher_courses]
         placeholders = ','.join(['%s'] * len(course_ids))
 
-        # Get unique department names
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT DISTINCT d.name
             FROM departments d
             JOIN students s ON s.department_id = d.id
             JOIN grades g ON g.student_id = s.id
-            WHERE g.course_id IN ({})
-        """.format(placeholders), tuple(course_ids))
+            WHERE g.course_id IN ({placeholders})
+        """, tuple(course_ids))
         departments = [row['name'] for row in cursor.fetchall()]
 
-        # Get grades with optional department filter
         grade_query = f"""
             SELECT 
                 g.student_id, g.course_id, g.grade, g.comment,
@@ -1103,30 +1100,28 @@ def teacher_view_grades():
             JOIN departments d ON s.department_id = d.id
             WHERE g.course_id IN ({placeholders})
         """
+        params = list(course_ids)
 
-        grade_params = list(course_ids)
-
-        if selected_dept != 'All':
+        if selected_dept != 'All' and selected_dept != '':
             grade_query += " AND d.name = %s"
-            grade_params.append(selected_dept)
+            params.append(selected_dept)
 
-        cursor.execute(grade_query, tuple(grade_params))
+        cursor.execute(grade_query, tuple(params))
         grades = cursor.fetchall()
 
         if not grades:
             return render_template('teacher_view_grades.html', grades=[], departments=departments, selected_dept=selected_dept, message="📭 No grades found.")
 
+        return render_template('teacher_view_grades.html', grades=grades, departments=departments, selected_dept=selected_dept)
+
     except Exception as e:
-        print("❌ Error:", str(e))
-        grades = []
-        departments = []
-        message = "⚠️ Failed to load grades."
+        import traceback
+        print("❌ Error loading grades:\n", traceback.format_exc())
+        return render_template('teacher_view_grades.html', grades=[], departments=[], selected_dept=selected_dept, error="⚠️ Error loading grades.")
+
     finally:
         cursor.close()
         conn.close()
-
-    return render_template('teacher_view_grades.html', grades=grades, departments=departments, selected_dept=selected_dept)
-
 
 
 
@@ -1328,6 +1323,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
