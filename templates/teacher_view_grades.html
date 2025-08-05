@@ -20,9 +20,9 @@
     <div class="col-md-6">
       <label class="form-label">Department</label>
       <select name="department" class="form-select">
-        <option value="">All</option>
+        <option value="All" {% if selected_dept == 'All' or not selected_dept %}selected{% endif %}>All</option>
         {% for dept in departments %}
-        <option value="{{ dept }}" {% if request.args.get('department') == dept %}selected{% endif %}>{{ dept }}</option>
+        <option value="{{ dept }}" {% if dept == selected_dept %}selected{% endif %}>{{ dept }}</option>
         {% endfor %}
       </select>
     </div>
@@ -38,6 +38,7 @@
       <tr>
         <th>Student Name</th>
         <th>Course</th>
+        <th>Department</th>
         <th>Grade</th>
         <th>Comment</th>
         <th>Actions</th>
@@ -48,6 +49,7 @@
       <tr>
         <td>{{ grade.student_name }}</td>
         <td>{{ grade.course_name }}</td>
+        <td>{{ grade.department_name }}</td>
         <td>{{ grade.grade }}</td>
         <td>
           <a href="#" 
