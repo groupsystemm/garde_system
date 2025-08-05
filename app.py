@@ -1069,45 +1069,64 @@ def teacher_view_grades():
     conn = create_connection()
     cursor = conn.cursor(dictionary=True)
 
+    selected_dept = request.args.get('department', 'All')
+
     try:
         # Get teacher's courses
         cursor.execute("SELECT id, course_name FROM courses WHERE teacher_id = %s", (teacher_id,))
         teacher_courses = cursor.fetchall()
 
         if not teacher_courses:
-            return render_template('teacher_view_grades.html', grades=[], message="📭 You have no courses assigned.")
+            return render_template('teacher_view_grades.html', grades=[], departments=[], selected_dept=selected_dept, message="📭 You have no courses assigned.")
 
-        # Extract course IDs
         course_ids = [course['id'] for course in teacher_courses]
-
-        # Use dynamic placeholders for SQL IN clause
         placeholders = ','.join(['%s'] * len(course_ids))
 
-        query = f"""
+        # Get unique department names
+        cursor.execute("""
+            SELECT DISTINCT d.name
+            FROM departments d
+            JOIN students s ON s.department_id = d.id
+            JOIN grades g ON g.student_id = s.id
+            WHERE g.course_id IN ({})
+        """.format(placeholders), tuple(course_ids))
+        departments = [row['name'] for row in cursor.fetchall()]
+
+        # Get grades with optional department filter
+        grade_query = f"""
             SELECT 
                 g.student_id, g.course_id, g.grade, g.comment,
-                s.name AS student_name, c.course_name
+                s.name AS student_name, c.course_name, d.name AS department_name
             FROM grades g
             JOIN students s ON g.student_id = s.id
             JOIN courses c ON g.course_id = c.id
+            JOIN departments d ON s.department_id = d.id
             WHERE g.course_id IN ({placeholders})
         """
 
-        cursor.execute(query, tuple(course_ids))
+        grade_params = list(course_ids)
+
+        if selected_dept != 'All':
+            grade_query += " AND d.name = %s"
+            grade_params.append(selected_dept)
+
+        cursor.execute(grade_query, tuple(grade_params))
         grades = cursor.fetchall()
 
         if not grades:
-            return render_template('teacher_view_grades.html', grades=[], message="📭 No grades found for your courses.")
-
-        return render_template('teacher_view_grades.html', grades=grades)
+            return render_template('teacher_view_grades.html', grades=[], departments=departments, selected_dept=selected_dept, message="📭 No grades found.")
 
     except Exception as e:
-        print("❌ Error fetching grades:", str(e))
-        return render_template('teacher_view_grades.html', grades=[], message="⚠️ Error loading grades.")
-
+        print("❌ Error:", str(e))
+        grades = []
+        departments = []
+        message = "⚠️ Failed to load grades."
     finally:
         cursor.close()
         conn.close()
+
+    return render_template('teacher_view_grades.html', grades=grades, departments=departments, selected_dept=selected_dept)
+
 
 
 
@@ -1309,6 +1328,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
