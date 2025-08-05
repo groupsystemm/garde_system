@@ -17,7 +17,7 @@
 
   <!-- Filter -->
   <form method="get" class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
       <label class="form-label">Department</label>
       <select name="department" class="form-select">
         <option value="All" {% if selected_dept == 'All' or not selected_dept %}selected{% endif %}>All</option>
@@ -26,13 +26,32 @@
         {% endfor %}
       </select>
     </div>
-    <div class="col-md-4 d-flex align-items-end">
+    <div class="col-md-3">
+      <label class="form-label">Semester</label>
+      <select name="semester" class="form-select">
+        <option value="All" {% if selected_semester == 'All' or not selected_semester %}selected{% endif %}>All</option>
+        {% for sem in semesters %}
+        <option value="{{ sem }}" {% if sem == selected_semester %}selected{% endif %}>{{ sem }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <label class="form-label">Section</label>
+      <select name="section" class="form-select">
+        <option value="All" {% if selected_section == 'All' or not selected_section %}selected{% endif %}>All</option>
+        {% for sec in sections %}
+        <option value="{{ sec }}" {% if sec == selected_section %}selected{% endif %}>{{ sec }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3 d-flex align-items-end">
       <button type="submit" class="btn btn-primary w-100">🔍 Filter</button>
     </div>
-    <div class="col-md-4 d-flex align-items-end">
-      <a href="/teacher/export-grades?department={{ selected_dept }}" class="btn btn-success w-100 me-2">⬇️ Export to Excel</a>
-    </div>
   </form>
+
+  <div class="mb-4">
+    <a href="/teacher/export-grades?department={{ selected_dept }}&semester={{ selected_semester }}&section={{ selected_section }}" class="btn btn-success w-100">⬇️ Export to Excel</a>
+  </div>
 
   <!-- Grades Table -->
   {% if grades %}
