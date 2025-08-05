@@ -1067,6 +1067,8 @@ def submit_grade_with_course():
 
 import traceback  # make sure this is imported at the top
 
+# --- Flask Route: teacher_view_grades ---
+
 @app.route('/teacher/view-grades', methods=['GET'])
 def teacher_view_grades():
     if session.get('role') != 'teacher':
@@ -1089,7 +1091,7 @@ def teacher_view_grades():
                 grades=[],
                 departments=[],
                 selected_dept=selected_dept,
-                message="📭 You have no courses assigned."
+                message="\U0001f4ed You have no courses assigned."
             )
 
         course_ids = [course['id'] for course in teacher_courses]
@@ -1125,35 +1127,29 @@ def teacher_view_grades():
         cursor.execute(grade_query, tuple(params))
         grades = cursor.fetchall()
 
-        if not grades:
-            return render_template(
-                'teacher_view_grades.html',
-                grades=[],
-                departments=departments,
-                selected_dept=selected_dept,
-                message="📭 No grades found."
-            )
-
         return render_template(
             'teacher_view_grades.html',
             grades=grades,
             departments=departments,
-            selected_dept=selected_dept
+            selected_dept=selected_dept,
+            message="" if grades else "\U0001f4ed No grades found."
         )
 
     except Exception:
-        print("❌ Error loading grades:\n", traceback.format_exc())
+        import traceback
+        print("\u274c Error loading grades:\n", traceback.format_exc())
         return render_template(
             'teacher_view_grades.html',
             grades=[],
             departments=[],
             selected_dept=selected_dept,
-            error=None  # no error message shown, just empty
+            error="Something went wrong while loading grades."
         )
 
     finally:
         cursor.close()
         conn.close()
+
 
 
 
@@ -1357,6 +1353,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
