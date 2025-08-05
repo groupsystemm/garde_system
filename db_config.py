@@ -6,14 +6,15 @@ from mysql.connector import Error
 def create_connection():
     try:
         connection = mysql.connector.connect(
-            host="localhost",         # ✅ Localhost for XAMPP
-            user="root",              # ✅ Default XAMPP MySQL user
-            password="",              # ❗ Usually empty in XAMPP
-            database="grade_db"       # ✅ Use your local database name
+            host="be9h1kqjuuxzkpadgkcc-mysql.services.clever-cloud.com",
+            user="uqj0qig3bsto59oh",
+            password="3OToj4A94CqH5EZgMj7P",
+            database="be9h1kqjuuxzkpadgkcc",
+            port=3306
         )
         if connection.is_connected():
-            print("✅ Connected to local MySQL database")
+            print("✅ Connected to Clever Cloud MySQL database")
             return connection
     except Error as e:
-        print(f"❌ Error connecting to database: {e}")
+        print(f"❌ Error connecting to Clever Cloud database: {e}")
         return None
