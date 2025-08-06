@@ -3,7 +3,6 @@ services:
     name: flask-grade-system
     env: python
     plan: free
-    region: oregon
     buildCommand: "pip install -r requirements.txt"
     startCommand: "gunicorn app:app"
     pythonVersion: 3.10.13
@@ -12,15 +11,6 @@ services:
       - key: FLASK_ENV
         value: production
       - key: SECRET_KEY
-        value: your-secret-key
-      - key: DB_HOST
-        value: be9h1kqjuuxzkpadgkcc-mysql.services.clever-cloud.com
-      - key: DB_NAME
-        value: be9h1kqjuuxzkpadgkcc
-      - key: DB_USER
-        value: uqj0qig3bsto59oh
-      - key: DB_PASSWORD
-        value: 3OToj4A94CqH5EZgMj7P
-      - key: DB_PORT
-        value: 3306
+        value: my-secret-key
+
 
