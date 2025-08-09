@@ -1485,6 +1485,10 @@ def contact():
         "address": "Addis Ababa, Ethiopia"
     }
     return render_template('contact.html', contact=contact_info)
+    
+@app.route('/markets')
+def markets():
+    return render_template('markets.html')
 
 @app.route('/logout')
 def logout():
@@ -1500,6 +1504,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
