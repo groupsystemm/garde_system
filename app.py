@@ -89,11 +89,6 @@ def login():
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
-        # ✅ Gmail-only check
-        if not email.endswith("@gmail.com"):
-            error = "Only Gmail accounts are allowed to log in."
-            return render_template('login.html', error=error)
-
         conn = None
         cursor = None
         try:
@@ -1482,6 +1477,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
