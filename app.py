@@ -1462,6 +1462,29 @@ def add_course_grade():
         message=message,
         error=error
     )
+@app.route('/about')
+def about():
+    # Text content for About page
+    about_text = """
+    GAGE University College is a private higher education college in Addis Ababa, Ethiopia.
+
+    It was established in 2005 as a private college of higher education in Addis Ababa, with the intention of meeting the growing demand for quality education in Ethiopia. The university is set out to offer academic programs that aim to meet up the high standards of excellence and that also meets the demand of the multicultural student population. The institution also focuses on the applicability and innovation that has the potential to create a competitive force in the country's higher education system.
+
+    The college has diversified its academic programs throughout the years to encompass a vast array of undergraduate and graduate courses. These programs are designed to equip students with the skills and knowledge needed to excel in today's more dynamic world.
+
+    The institution tries to strike a balance between academic rigor and performance so that it can ensure that the alumni can contribute to society meaningfully.
+    """
+    return render_template('about.html', about_text=about_text)
+
+
+@app.route('/contact')
+def contact():
+    contact_info = {
+        "phone": "0947317192",
+        "email": "info@gageuniversity.edu.et",
+        "address": "Addis Ababa, Ethiopia"
+    }
+    return render_template('contact.html', contact=contact_info)
 
 @app.route('/logout')
 def logout():
@@ -1477,6 +1500,7 @@ def ping():
 if __name__ == '__main__':
     create_default_admin()  # ensure admin user exists
     app.run(debug=True)
+
 
 
 
