@@ -58,7 +58,7 @@
 <body class="bg-light">
 
   {% if session.get('user_id') %}
-  <!-- ✅ Navbar -->
+  <!-- ✅ Navbar for logged-in users -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
     <div class="container-fluid">
       <a class="navbar-brand" href="/dashboard">📘 GradeSystem</a>
@@ -92,6 +92,35 @@
             <a class="nav-link text-danger" href="/logout">Logout</a>
           </li>
         </ul>
+      </div>
+    </div>
+  </nav>
+  
+  {% else %}
+  <!-- ✅ Public Navbar for visitors -->
+  <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom shadow-sm">
+    <div class="container">
+      <a class="navbar-brand text-primary" href="/">🏫 GradeSystem</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#publicNav"
+              aria-controls="publicNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="publicNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="/">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="/about">About</a></li>
+          <li class="nav-item"><a class="nav-link" href="/contact">Contact</a></li>
+          <li class="nav-item"><a class="nav-link" href="/markets">Markets & Stores</a></li>
+          <li class="nav-item"><a class="nav-link" href="/categories">Categories & Roles</a></li>
+        </ul>
+
+        <form class="d-flex me-3">
+          <input class="form-control me-2" type="search" placeholder="Search..." aria-label="Search">
+          <button class="btn btn-outline-primary" type="submit">Search</button>
+        </form>
+
+        <a href="/login" class="btn btn-primary">Login</a>
       </div>
     </div>
   </nav>
